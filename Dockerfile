@@ -1,5 +1,7 @@
 FROM ubuntu:15.10
 
+ENV MONERO_VERSION 0.10.1
+
 ADD entrypoint.sh /
 
 RUN set -ex \
@@ -15,7 +17,7 @@ RUN set -ex \
 RUN set -ex \
 	&& git clone https://github.com/monero-project/bitmonero.git /opt/bitmonero \
 	&& cd /opt/bitmonero \
-	&& git checkout v0.10.0 \
+	&& git checkout v$MONERO_VERSION \
 	&& nice -n 19 ionice -c2 -n7 make release-static \
 	&& mv /opt/bitmonero/build/release/bin/* /usr/bin/ \
 	&& cd / \
