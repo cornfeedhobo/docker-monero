@@ -1,6 +1,6 @@
 FROM ubuntu:15.10
 
-ENV MONERO_VERSION 0.10.2
+ENV MONERO_VERSION 0.10.3
 
 ADD entrypoint.sh /
 
