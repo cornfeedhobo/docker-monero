@@ -1,4 +1,4 @@
-FROM ubuntu:15.10
+FROM ubuntu:16.04
 
 ENV MONERO_VERSION 0.11.1.0
 
