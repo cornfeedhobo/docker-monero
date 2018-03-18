@@ -5,12 +5,12 @@ docker-monero        [![Docker Stars](https://img.shields.io/docker/stars/cornfe
 
 
 
-# Pulling
+## Pulling
     docker pull cornfeedhobo/monero
 
 
 
-# Running the Daemon
+## Running the Daemon
     docker run -dit --name monero \
     	-v $HOME/.bitmonero:/root/.bitmonero \
     	-p 18080:18080 -p 18081:18081 \
@@ -18,7 +18,7 @@ docker-monero        [![Docker Stars](https://img.shields.io/docker/stars/cornfe
     	cornfeedhobo/monero
 
 
-# Checking the container status
+## Checking the container status
     docker logs monero
 
     curl -X POST http://localhost:18081/json_rpc \
@@ -28,14 +28,14 @@ docker-monero        [![Docker Stars](https://img.shields.io/docker/stars/cornfe
 
 
 
-# Using the wallet
+## Using the wallet
 
 
-## Docker exec
+### Docker exec
     docker exec -it monero monero-wallet-cli --wallet-file=wallet
 
 
-## Isolated container
+### Isolated container
     docker run --rm -it --link monero \
     	-v $HOME/.bitmonero:/root/.bitmonero \
     	cornfeedhobo/monero monero-wallet-cli \
@@ -44,8 +44,14 @@ docker-monero        [![Docker Stars](https://img.shields.io/docker/stars/cornfe
 
 
 
-# Running Just the Wallet
+## Running Just the Wallet
     docker run --rm -it \
     	-v $HOME/.bitmonero:/root/.bitmonero \
     	cornfeedhobo/monero monero-wallet-cli \
     		--wallet-file=wallet
+
+
+
+## Is it any good?
+
+[Yes](http://news.ycombinator.com/item?id=3067434)
