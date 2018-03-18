@@ -5,13 +5,35 @@ ENV MONERO_VERSION 0.11.1.0
 ADD entrypoint.sh /
 
 RUN set -ex \
-	&& apt-get update \
-	&& apt-get install -y ca-certificates curl iputils-ping numactl \
-	&& apt-get install -y git build-essential pkgconf cmake libunbound-dev libssl-dev libevent-dev \
-		libgtest-dev libdb++-dev libldns-dev libexpat1-dev libbison-dev \
-	&& apt-get install -y libboost1.58-dev libboost1.58-doc libboost-date-time1.58-dev \
-		libboost-chrono1.58-dev libboost-filesystem1.58-dev libboost-program-options1.58-dev \
-		libboost-serialization1.58-dev libboost-system1.58-dev libboost-regex1.58-dev libboost-thread1.58-dev \
+	&& apt-get update && apt-get install -y ca-certificates && apt-get install -y \
+		curl \
+		iputils-ping \
+		numactl \
+		git \
+		build-essential \
+		pkgconf \
+		cmake \
+		doxygen \
+		graphviz-dev \
+		libreadline-dev \
+		libunbound-dev \
+		libssl-dev \
+		libevent-dev \
+		libgtest-dev \
+		libdb++-dev \
+		libldns-dev \
+		libexpat1-dev \
+		libbison-dev \
+		libboost1.58-dev \
+		libboost1.58-doc \
+		libboost-date-time1.58-dev \
+		libboost-chrono1.58-dev \
+		libboost-filesystem1.58-dev \
+		libboost-program-options1.58-dev \
+		libboost-serialization1.58-dev \
+		libboost-system1.58-dev \
+		libboost-regex1.58-dev \
+		libboost-thread1.58-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 RUN set -ex \
@@ -32,4 +54,3 @@ EXPOSE 18080 18081
 ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["monerod"]
-
