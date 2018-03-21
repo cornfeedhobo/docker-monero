@@ -1,7 +1,7 @@
 docker-monero        [![Docker Stars](https://img.shields.io/docker/stars/cornfeedhobo/monero.svg)](https://hub.docker.com/r/cornfeedhobo/monero/)        [![Docker Pulls](https://img.shields.io/docker/pulls/cornfeedhobo/monero.svg)](https://hub.docker.com/r/cornfeedhobo/monero/)
 =============
 
-*[monero](http://monero.org) containers based on Ubuntu*
+*Built from source [monero](http://monero.org) Docker images based on [Alpine Linux](https://alpinelinux.org)*
 
 
 
