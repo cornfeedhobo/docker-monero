@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/ash
 set -e
 
 # if thrown flags immediately,
@@ -14,8 +14,7 @@ if [ "$1" = 'monerod' ]; then
 	if $numa true &> /dev/null; then
 		set -- $numa "$@"
 	fi
-
-	exec "$@" --rpc-bind-ip=0.0.0.0 --confirm-external-bind
+	exec "$@"
 fi
 
 # otherwise, don't get in their way
