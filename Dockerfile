@@ -111,8 +111,8 @@ RUN set -ex \
 	&& make install
 
 # Monero
-ENV MONERO_VERSION=0.11.1.0
-ENV MONERO_HASH=793bc973746a10883adb2f89827e223f562b9651
+ENV MONERO_VERSION=0.12.0.0
+ENV MONERO_HASH=c29890c2c03f7f24aa4970b3ebbfe2dbb95b24eb
 COPY easylogging.patch /tmp/easylogging.patch
 ARG NPROC
 RUN set -ex \
