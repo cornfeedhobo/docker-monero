@@ -116,8 +116,10 @@ ENV MONERO_HASH=c29890c2c03f7f24aa4970b3ebbfe2dbb95b24eb
 COPY easylogging.patch /tmp/easylogging.patch
 ARG NPROC
 RUN set -ex \
-	&& git clone --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git /src \
+	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git /src \
 	&& cd /src \
+	&& git submodule init \
+	&& git submodule update \
 	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1 \
 	&& patch -p1 < /tmp/easylogging.patch \
 	&& rm -f /tmp/easylogging.patch \
