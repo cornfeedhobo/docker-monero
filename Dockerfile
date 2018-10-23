@@ -129,7 +129,7 @@ RUN set -ex \
 	&& cd monero \
 	&& patch -p1 < /tmp/easylogging.patch \
 	&& rm -f /tmp/easylogging.patch \
-	&& if [ -z "$NPROC" ] ; then export NPROC="$(($(nproc)/2))" ; fi \
+	&& if [ -z "$NPROC" ] ; then export NPROC="1" ; fi \
 	&& export Readline_ROOT_DIR="/usr/local" \
 	&& nice -n 19 ionice -c2 -n7 make -j$NPROC release-static-linux-x86_64
 
