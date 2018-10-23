@@ -67,6 +67,19 @@ RUN set -ex \
 	&& make install
 ENV OPENSSL_ROOT_DIR=/usr/local/openssl-${OPENSSL_VERSION}
 
+# Sodium
+ARG SODIUM_VERSION=1.0.16
+ARG SODIUM_HASH=675149b9b8b66ff44152553fb3ebf9858128363d
+RUN set -ex \
+	&& git clone --depth 1 -b ${SODIUM_VERSION} https://github.com/jedisct1/libsodium.git \
+	&& cd libsodium \
+	&& test `git rev-parse HEAD` = ${SODIUM_HASH} || exit 1 \
+	&& ./autogen.sh \
+	&& CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure \
+	&& make \
+	&& make check \
+	&& make install
+
 # ZMQ
 ARG ZMQ_VERSION=v4.2.3
 ARG ZMQ_HASH=3226b8ebddd9c6c738ba42986822c26418a49afb
@@ -100,19 +113,6 @@ RUN set -ex \
 	&& make \
 	&& make install
 
-# Sodium
-ARG SODIUM_VERSION=1.0.16
-ARG SODIUM_HASH=675149b9b8b66ff44152553fb3ebf9858128363d
-RUN set -ex \
-	&& git clone --depth 1 -b ${SODIUM_VERSION} https://github.com/jedisct1/libsodium.git \
-	&& cd libsodium \
-	&& test `git rev-parse HEAD` = ${SODIUM_HASH} || exit 1 \
-	&& ./autogen.sh \
-	&& CFLAGS="-fPIC" CXXFLAGS="-fPIC" ./configure \
-	&& make \
-	&& make check \
-	&& make install
-
 # Monero
 ENV MONERO_VERSION=0.12.1.0
 ENV MONERO_HASH=aa6850c71d2269bd0728ee503ff07f1d52ce5e58
@@ -143,10 +143,7 @@ COPY --from=builder /usr/local/monero/build/release/bin/* /usr/local/bin/
 VOLUME /root/.bitmonero
 WORKDIR /root/.bitmonero
 
-EXPOSE 18080 18081
-
 ADD entrypoint.sh /entrypoint.sh
-
 ENTRYPOINT [ "/entrypoint.sh" ]
 
 CMD [ "monerod", \
@@ -156,3 +153,5 @@ CMD [ "monerod", \
 		"--rpc-bind-port=18081", \
 		"--non-interactive", \
 		"--confirm-external-bind" ]
+
+EXPOSE 18080 18081
