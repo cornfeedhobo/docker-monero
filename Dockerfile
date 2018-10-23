@@ -3,21 +3,24 @@
 # builder stage
 FROM alpine:3.7 as builder
 
-RUN set -ex && apk add --update \
-		ca-certificates \
-		cmake \
-		g++ \
-		make \
-		pkgconf \
-		graphviz \
-		doxygen \
-		git \
-		curl \
-		libtool \
+RUN set -ex && apk add --update --no-cache \
 		autoconf \
 		automake \
+		ca-certificates \
+		cmake \
+		curl \
+		dev86 \
+		doxygen \
 		file \
-		linux-headers
+		g++ \
+		git \
+		graphviz \
+		libtool \
+		linux-headers \
+		make \
+		ncurses-dev \
+		pcsc-lite-dev \
+		pkgconf
 
 WORKDIR /usr/local
 
@@ -111,32 +114,30 @@ RUN set -ex \
 	&& make install
 
 # Monero
-ENV MONERO_VERSION=0.12.0.0
-ENV MONERO_HASH=c29890c2c03f7f24aa4970b3ebbfe2dbb95b24eb
-COPY easylogging.patch /tmp/easylogging.patch
-ARG NPROC
+ENV MONERO_VERSION=0.12.1.0
+ENV MONERO_HASH=aa6850c71d2269bd0728ee503ff07f1d52ce5e58
 RUN set -ex \
-	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git /src \
-	&& cd /src \
+	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
+	&& cd monero \
 	&& git submodule init \
 	&& git submodule update \
-	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1 \
+	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1
+
+ARG NPROC
+COPY easylogging.patch /tmp/easylogging.patch
+RUN set -ex \
+	&& cd monero \
 	&& patch -p1 < /tmp/easylogging.patch \
 	&& rm -f /tmp/easylogging.patch \
-	&& if [ -z "$NPROC" ] ; \
-		then nice -n 19 ionice -c2 -n7 make -j$(nproc) release-static ; \
-		else nice -n 19 ionice -c2 -n7 make -j$NPROC release-static ; \
-	fi
+	&& if [ -z "$NPROC" ] ; then export NPROC="$(($(nproc)/2))" ; fi \
+	&& export Readline_ROOT_DIR="/usr/local" \
+	&& nice -n 19 ionice -c2 -n7 make -j$NPROC release-static-linux-x86_64
 
 
 # runtime stage
 FROM alpine:3.7
 
-RUN set -ex \
-	&& apk add --update ca-certificates \
-	&& rm -rf /var/cache/apk/*
-
-COPY --from=builder /src/build/release/bin/* /usr/local/bin/
+COPY --from=builder /usr/local/monero/build/release/bin/* /usr/local/bin/
 
 # Contains the blockchain and wallet files
 VOLUME /root/.bitmonero
