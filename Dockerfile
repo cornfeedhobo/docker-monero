@@ -1,7 +1,7 @@
 # Multistage docker build, requires docker 17.05
 
 # builder stage
-FROM alpine:3.7 as builder
+FROM alpine:3.8 as builder
 
 RUN set -ex && apk add --update --no-cache \
 		autoconf \
@@ -114,8 +114,8 @@ RUN set -ex \
 	&& make install
 
 # Monero
-ENV MONERO_VERSION=0.12.3.0
-ENV MONERO_HASH=a486cae407b109a7a95060daa85e4efed2046c01
+ENV MONERO_VERSION=0.13.0.2
+ENV MONERO_HASH=77ef8c1839e1984471605e072a20e04d1e7eb6f8
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
@@ -135,9 +135,9 @@ RUN set -ex \
 
 
 # runtime stage
-FROM alpine:3.7
+FROM alpine:3.8
 
-COPY --from=builder /usr/local/monero/build/release/bin/* /usr/local/bin/
+COPY --from=builder /usr/local/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
 # Contains the blockchain and wallet files
 VOLUME /root/.bitmonero
