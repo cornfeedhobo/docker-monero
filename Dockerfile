@@ -114,8 +114,8 @@ RUN set -ex \
 	&& make install
 
 # Monero
-ENV MONERO_VERSION=0.12.2.0
-ENV MONERO_HASH=e2c39f6b59fcf5c623c814dfefc518ab0b7eca32
+ENV MONERO_VERSION=0.12.3.0
+ENV MONERO_HASH=a486cae407b109a7a95060daa85e4efed2046c01
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
