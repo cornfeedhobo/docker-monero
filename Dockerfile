@@ -137,6 +137,10 @@ RUN set -ex \
 # runtime stage
 FROM alpine:3.8
 
+RUN set -ex && apk add --update --no-cache \
+		ncurses-libs \
+		pcsc-lite-libs
+
 COPY --from=builder /usr/local/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
 # Contains the blockchain and wallet files
