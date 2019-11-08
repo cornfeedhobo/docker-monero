@@ -1,7 +1,7 @@
 # Multistage docker build, requires docker 17.05
 
 # builder stage
-FROM alpine:3.8 as builder
+FROM alpine:3.9 as builder
 
 RUN set -ex && apk add --update --no-cache \
 		autoconf \
@@ -25,9 +25,9 @@ RUN set -ex && apk add --update --no-cache \
 WORKDIR /usr/local
 
 # Boost
-ARG BOOST_VERSION=1_68_0
-ARG BOOST_VERSION_DOT=1.68.0
-ARG BOOST_HASH=7f6130bc3cf65f56a618888ce9d5ea704fa10b462be126ad053e80e553d6d8b7
+ARG BOOST_VERSION=1_69_0
+ARG BOOST_VERSION_DOT=1.69.0
+ARG BOOST_HASH=8f32d4617390d1c2d16f26a27ab60d97807b35440d45891fa340fc2648b04406
 RUN set -ex \
 	&& curl -s -L -o  boost_${BOOST_VERSION}.tar.bz2 https://dl.bintray.com/boostorg/release/${BOOST_VERSION_DOT}/source/boost_${BOOST_VERSION}.tar.bz2 \
 	&& echo "${BOOST_HASH}  boost_${BOOST_VERSION}.tar.bz2" | sha256sum -c \
@@ -55,8 +55,8 @@ RUN set -ex \
 ENV BOOST_ROOT /usr/local/boost_${BOOST_VERSION}
 
 # OpenSSL
-ARG OPENSSL_VERSION=1.1.0h
-ARG OPENSSL_HASH=5835626cde9e99656585fc7aaa2302a73a7e1340bf8c14fd635a62c66802a517
+ARG OPENSSL_VERSION=1.1.1b
+ARG OPENSSL_HASH=5c557b023230413dfb0756f3137a13e6d726838ccd1430888ad15bfb2b43ea4b
 RUN set -ex \
 	&& curl -s -O https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
 	&& echo "${OPENSSL_HASH}  openssl-${OPENSSL_VERSION}.tar.gz" | sha256sum -c \
@@ -68,8 +68,8 @@ RUN set -ex \
 ENV OPENSSL_ROOT_DIR=/usr/local/openssl-${OPENSSL_VERSION}
 
 # Sodium
-ARG SODIUM_VERSION=1.0.16
-ARG SODIUM_HASH=675149b9b8b66ff44152553fb3ebf9858128363d
+ARG SODIUM_VERSION=1.0.17
+ARG SODIUM_HASH=b732443c442239c2e0184820e9b23cca0de0828c
 RUN set -ex \
 	&& git clone --depth 1 -b ${SODIUM_VERSION} https://github.com/jedisct1/libsodium.git \
 	&& cd libsodium \
@@ -81,8 +81,8 @@ RUN set -ex \
 	&& make install
 
 # ZMQ
-ARG ZMQ_VERSION=v4.2.5
-ARG ZMQ_HASH=d062edd8c142384792955796329baf1e5a3377cd
+ARG ZMQ_VERSION=v4.3.1
+ARG ZMQ_HASH=2cb1240db64ce1ea299e00474c646a2453a8435b
 RUN set -ex \
 	&& git clone --depth 1 -b ${ZMQ_VERSION} https://github.com/zeromq/libzmq.git \
 	&& cd libzmq \
@@ -94,8 +94,8 @@ RUN set -ex \
 	&& ldconfig .
 
 # zmq.hpp
-ARG CPPZMQ_VERSION=v4.2.3
-ARG CPPZMQ_HASH=6aa3ab686e916cb0e62df7fa7d12e0b13ae9fae6
+ARG CPPZMQ_VERSION=v4.3.0
+ARG CPPZMQ_HASH=213da0b04ae3b4d846c9abc46bab87f86bfb9cf4
 RUN set -ex \
 	&& git clone --depth 1 -b ${CPPZMQ_VERSION} https://github.com/zeromq/cppzmq.git \
 	&& cd cppzmq \
@@ -103,8 +103,8 @@ RUN set -ex \
 	&& mv *.hpp /usr/local/include/
 
 # Readline
-ARG READLINE_VERSION=7.0
-ARG READLINE_HASH=750d437185286f40a369e1e4f4764eda932b9459b5ec9a731628393dd3d32334
+ARG READLINE_VERSION=8.0
+ARG READLINE_HASH=e339f51971478d369f8a053a330a190781acb9864cf4c541060f12078948e461
 RUN set -ex \
 	&& curl -s -O https://ftp.gnu.org/gnu/readline/readline-${READLINE_VERSION}.tar.gz \
 	&& echo "${READLINE_HASH}  readline-${READLINE_VERSION}.tar.gz" | sha256sum -c \
@@ -115,8 +115,8 @@ RUN set -ex \
 	&& make install
 
 # Monero
-ENV MONERO_VERSION=0.14.0.2
-ENV MONERO_HASH=6cadbdcd2d952433db3c2422511ed4d13b2cc824
+ENV MONERO_VERSION=0.14.1.0
+ENV MONERO_HASH=29a505d1c1cfd3baa7d3a0c4433db8d7b043e341
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
@@ -136,7 +136,7 @@ RUN set -ex \
 
 
 # runtime stage
-FROM alpine:3.8
+FROM alpine:3.9
 
 RUN set -ex && apk add --update --no-cache \
 		ncurses-libs \
@@ -144,9 +144,11 @@ RUN set -ex && apk add --update --no-cache \
 
 COPY --from=builder /usr/local/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
+ENV MONERO_HOME "/root/.bitmonero"
+
 # Contains the blockchain and wallet files
-VOLUME /root/.bitmonero
-WORKDIR /root/.bitmonero
+VOLUME $MONERO_HOME
+WORKDIR $MONERO_HOME
 
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
