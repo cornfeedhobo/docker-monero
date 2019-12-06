@@ -68,6 +68,7 @@ RUN set -ex && apk add --update --no-cache \
 		protobuf-dev \
 		rapidjson-dev \
 		readline-dev \
+		unbound-dev \
 		zeromq-dev
 
 # zmq.hpp
@@ -87,8 +88,8 @@ ENV CFLAGS='-fPIC'
 ENV CXXFLAGS='-fPIC -DELPP_FEATURE_CRASH_LOG'
 
 # Monero
-ENV MONERO_VERSION=0.15.0.0
-ENV MONERO_HASH=69c488a479609df2838c14cd0cf500242758f449
+ENV MONERO_VERSION=0.15.0.1
+ENV MONERO_HASH=6def88ad405b39f632a91afa3aacbb92ecc63c1f
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
