@@ -88,8 +88,8 @@ ENV CFLAGS='-fPIC'
 ENV CXXFLAGS='-fPIC -DELPP_FEATURE_CRASH_LOG'
 
 # Monero
-ENV MONERO_VERSION=0.15.0.1
-ENV MONERO_HASH=6def88ad405b39f632a91afa3aacbb92ecc63c1f
+ENV MONERO_VERSION=0.15.0.5
+ENV MONERO_HASH=17ec003c06eb95207c91f0e9186889f83266e461
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
