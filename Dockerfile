@@ -1,7 +1,7 @@
 # Multistage docker build, requires docker 17.05
 
 # builder stage
-FROM alpine:3.10 as builder
+FROM alpine:3.12 as builder
 
 RUN set -ex && apk add --update --no-cache \
 		autoconf \
@@ -29,7 +29,6 @@ RUN set -ex && apk add --update --no-cache \
 		boost-math \
 		boost-prg_exec_monitor \
 		boost-program_options \
-		boost-python2 \
 		boost-python3 \
 		boost-random \
 		boost-regex \
@@ -88,8 +87,8 @@ ENV CFLAGS='-fPIC'
 ENV CXXFLAGS='-fPIC -DELPP_FEATURE_CRASH_LOG'
 
 # Monero
-ENV MONERO_VERSION=0.17.1.6
-ENV MONERO_HASH=f7aa91f70d4129d8b5565090cd9f4c3788536fd2
+ENV MONERO_VERSION=0.17.1.7
+ENV MONERO_HASH=54a4071473432f30b83638a98779941e0b164f39
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
@@ -100,14 +99,16 @@ RUN set -ex \
 
 
 # runtime stage
-FROM alpine:3.10
+FROM alpine:3.12
 
 RUN set -ex && apk add --update --no-cache \
 		ca-certificates \
 		libexecinfo \
 		libsodium \
 		ncurses-libs \
-		pcsc-lite-libs
+		pcsc-lite-libs \
+		readline \
+		zeromq
 
 COPY --from=builder /usr/local/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
