@@ -95,7 +95,7 @@ RUN set -ex \
 	&& git submodule init \
 	&& git submodule update \
 	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1 \
-	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-1} release-static-linux-x86_64
+	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-1} release
 
 
 # runtime stage
