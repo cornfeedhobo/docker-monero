@@ -3,7 +3,7 @@
 # builder stage
 FROM alpine:3.13 as builder
 
-RUN set -ex && apk add --update --no-cache \
+RUN set -ex && apk --update --no-cache upgrade && apk add --update --no-cache \
 		autoconf \
 		automake \
 		boost \
@@ -77,8 +77,8 @@ ENV CFLAGS='-fPIC'
 ENV CXXFLAGS='-fPIC -DELPP_FEATURE_CRASH_LOG'
 
 # Monero
-ENV MONERO_VERSION=0.17.2.3
-ENV MONERO_HASH=2222bea92fdeef7e6449d2d784cdfc3012641ee1
+ENV MONERO_VERSION=0.17.3.0
+ENV MONERO_HASH=ab18fea3500841fc312630d49ed6840b3aedb34d
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
@@ -91,7 +91,7 @@ RUN set -ex \
 # runtime stage
 FROM alpine:3.13
 
-RUN set -ex && apk add --update --no-cache \
+RUN set -ex && apk --update --no-cache upgrade && apk add --update --no-cache \
 		boost \
 		boost-atomic \
 		boost-chrono \
