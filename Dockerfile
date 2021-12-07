@@ -70,32 +70,22 @@ RUN set -ex && apk add --update --no-cache \
 		unbound-dev \
 		zeromq-dev
 
-# zmq.hpp
-ARG CPPZMQ_VERSION=v4.4.1
-ARG CPPZMQ_HASH=f5b36e563598d48fcc0d82e589d3596afef945ae
-RUN set -ex \
-	&& git clone --depth 1 -b ${CPPZMQ_VERSION} https://github.com/zeromq/cppzmq.git \
-	&& cd cppzmq \
-	&& test `git rev-parse HEAD` = ${CPPZMQ_HASH} || exit 1 \
-	&& mkdir /usr/local/include \
-	&& mv *.hpp /usr/local/include/
-
-WORKDIR /usr/local
+WORKDIR /usr/src
 
 ARG NPROC
 ENV CFLAGS='-fPIC'
 ENV CXXFLAGS='-fPIC -DELPP_FEATURE_CRASH_LOG'
 
 # Monero
-ENV MONERO_VERSION=0.17.2.3
-ENV MONERO_HASH=2222bea92fdeef7e6449d2d784cdfc3012641ee1
+ENV MONERO_VERSION=0.17.3.0
+ENV MONERO_HASH=ab18fea3500841fc312630d49ed6840b3aedb34d
 RUN set -ex \
 	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
+	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1 \
 	&& git submodule init \
 	&& git submodule update \
-	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1 \
-	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-1} release
+	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-$(nproc)} release
 
 
 # runtime stage
@@ -149,11 +139,10 @@ RUN set -ex && apk add --update --no-cache \
 		unbound-libs \
 		zeromq
 
-COPY --from=builder /usr/local/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
-
-ENV MONERO_HOME "/root/.bitmonero"
+COPY --from=builder /usr/src/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
 # Contains the blockchain and wallet files
+ENV MONERO_HOME "/root/.bitmonero"
 VOLUME $MONERO_HOME
 WORKDIR $MONERO_HOME
 
