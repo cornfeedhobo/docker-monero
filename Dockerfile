@@ -1,7 +1,7 @@
 # Multistage docker build, requires docker 17.05
 
 # builder stage
-FROM alpine:3.13 as builder
+FROM alpine:3.15 as builder
 
 RUN set -ex && apk add --update --no-cache \
 		autoconf \
@@ -71,8 +71,8 @@ RUN set -ex && apk add --update --no-cache \
 		zeromq-dev
 
 # zmq.hpp
-ARG CPPZMQ_VERSION=v4.4.1
-ARG CPPZMQ_HASH=f5b36e563598d48fcc0d82e589d3596afef945ae
+ARG CPPZMQ_VERSION=v4.8.1
+ARG CPPZMQ_HASH=dd663fafd830466d34cba278c2cfd0f92eb67614
 RUN set -ex \
 	&& git clone --depth 1 -b ${CPPZMQ_VERSION} https://github.com/zeromq/cppzmq.git \
 	&& cd cppzmq \
@@ -99,7 +99,7 @@ RUN set -ex \
 
 
 # runtime stage
-FROM alpine:3.13
+FROM alpine:3.15
 
 RUN set -ex && apk add --update --no-cache \
 		boost \
