@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+
+  blockchain:
+    image: "cornfeedhobo/monero:${TAG:-latest}"
+    user: "${UID:-1000}:${GID:-1000}"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: "2G"
+    ports:
+      - "18080:18080"
+      - "18081:18081"
+    tty: true
+    volumes:
+      - type: "bind"
+        source: "$HOME/.bitmonero"
+        target: "/home/monero/.bitmonero"
+
+  wallet:
+    image: "cornfeedhobo/monero:${TAG:-latest}"
+    links: ["blockchain"]
+    user: "${UID:-1000}:${GID:-1000}"
+    tty: true
+    volumes:
+      - type: "bind"
+        source: "$HOME/.bitmonero"
+        target: "/home/monero/.bitmonero"
+    command: >
+      monero-wallet-cli
+      --wallet-file="${WALLET:-wallet}"
+      --daemon-address="blockchain:18081"
+      --trusted-daemon

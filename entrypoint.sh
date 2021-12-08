@@ -14,9 +14,10 @@ if [ "$1" = 'monerod' ]; then
 	if $numa true &> /dev/null; then
 		set -- $numa "$@"
 	fi
-	exec "$@"
+	# start the daemon using fixuid
+	# to adjust permissions if needed
+	fixuid "$@"
 fi
 
 # otherwise, don't get in their way
 exec "$@"
-

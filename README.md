@@ -3,12 +3,16 @@
 [![Docker Stars](https://img.shields.io/docker/stars/cornfeedhobo/monero.svg)](https://hub.docker.com/r/cornfeedhobo/monero/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/cornfeedhobo/monero.svg)](https://hub.docker.com/r/cornfeedhobo/monero/)
 
-**Built from source [monero](http://monero.org) Docker images based on [Alpine Linux](https://alpinelinux.org)**
+**Built from source [monero](http://getmonero.org) Docker images based on [Alpine Linux](https://alpinelinux.org)**
 
-## Pulling
+## TL;DR
 
 ```bash
-docker pull cornfeedhobo/monero
+UID="$(id -u)" GID="$(id -g)" docker-compose run wallet
+```
+
+```bash
+docker-compose down
 ```
 
 ## Running the Daemon
@@ -17,7 +21,7 @@ docker pull cornfeedhobo/monero
 docker run -dit --name monero \
   -v $HOME/.bitmonero:/root/.bitmonero \
   -p 18080:18080 -p 18081:18081 \
-  --memory=1g --memory-swap=1g \
+  --user="$(id -u):$(id -g)" \
   cornfeedhobo/monero
 ```
 
@@ -47,19 +51,14 @@ docker exec -it monero monero-wallet-cli --wallet-file=wallet
 ```bash
 docker run --rm -it --link monero \
   -v $HOME/.bitmonero:/root/.bitmonero \
-  cornfeedhobo/monero monero-wallet-cli \
-    --wallet-file=wallet \
-    --daemon-address="$MONERO_PORT_18081_TCP_ADDR:$MONERO_PORT_18081_TCP_PORT"
+  --user="$(id -u):$(id -g)" \
+  cornfeedhobo/monero \
+    monero-wallet-cli \
+      --wallet-file=wallet \
+      --daemon-address="$MONERO_PORT_18081_TCP_ADDR:$MONERO_PORT_18081_TCP_PORT"
 ```
 
-## Running Just the Wallet
-
-```bash
-docker run --rm -it \
-  -v $HOME/.bitmonero:/root/.bitmonero \
-  cornfeedhobo/monero monero-wallet-cli \
-    --wallet-file=wallet
-```
+_Note: these are special environment variables filled in by the docker daemon and are specific to these examples_.
 
 ## Is it any good?
 

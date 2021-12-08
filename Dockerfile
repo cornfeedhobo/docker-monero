@@ -1,9 +1,15 @@
 # Multistage docker build, requires docker 17.05
 
-# builder stage
-FROM alpine:3.13 as builder
+# Builder stage
+FROM alpine:3.15 as builder
 
-RUN set -ex && apk add --update --no-cache \
+ARG MONERO_VERSION
+ARG MONERO_HASH
+ARG MONERO_TARGET
+
+# These steps are broken up so that the builder picks up the layer from the --update command
+RUN set -ex && apk --update --no-cache upgrade
+RUN set -ex && apk add --no-cache \
 		autoconf \
 		automake \
 		boost \
@@ -70,95 +76,117 @@ RUN set -ex && apk add --update --no-cache \
 		unbound-dev \
 		zeromq-dev
 
-# zmq.hpp
-ARG CPPZMQ_VERSION=v4.4.1
-ARG CPPZMQ_HASH=f5b36e563598d48fcc0d82e589d3596afef945ae
+# Install fixuid tool
+RUN set -ex && \
+	curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.5.1/fixuid-0.5.1-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
+	chown root:root /usr/local/bin/fixuid && \
+	chmod 4755 /usr/local/bin/fixuid
+
+WORKDIR /usr/src
+
+ENV CFLAGS="-fPIC"
+ENV CXXFLAGS="-fPIC -DELPP_FEATURE_CRASH_LOG"
+
+# Build Monero
 RUN set -ex \
-	&& git clone --depth 1 -b ${CPPZMQ_VERSION} https://github.com/zeromq/cppzmq.git \
-	&& cd cppzmq \
-	&& test `git rev-parse HEAD` = ${CPPZMQ_HASH} || exit 1 \
-	&& mkdir /usr/local/include \
-	&& mv *.hpp /usr/local/include/
-
-WORKDIR /usr/local
-
-ARG NPROC
-ENV CFLAGS='-fPIC'
-ENV CXXFLAGS='-fPIC -DELPP_FEATURE_CRASH_LOG'
-
-# Monero
-ENV MONERO_VERSION=0.17.2.3
-ENV MONERO_HASH=2222bea92fdeef7e6449d2d784cdfc3012641ee1
-RUN set -ex \
-	&& git clone --recursive --depth 1 -b v${MONERO_VERSION} https://github.com/monero-project/monero.git \
+	&& git clone --recursive --depth 1 -b ${MONERO_VERSION} https://github.com/monero-project/monero.git \
 	&& cd monero \
 	&& git submodule init \
 	&& git submodule update \
-	&& test `git rev-parse HEAD` = ${MONERO_HASH} || exit 1 \
-	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-1} release
+	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-$(nproc)} ${MONERO_TARGET}
 
 
-# runtime stage
-FROM alpine:3.13
+# Runtime stage
+FROM alpine:3.15
 
-RUN set -ex && apk add --update --no-cache \
-		boost \
-		boost-atomic \
-		boost-chrono \
-		boost-container \
-		boost-context \
-		boost-contract \
-		boost-coroutine \
-		boost-date_time \
-		boost-fiber \
-		boost-filesystem \
-		boost-graph \
-		boost-iostreams \
-		boost-libs \
-		boost-locale \
-		boost-log \
-		boost-log_setup \
-		boost-math \
-		boost-prg_exec_monitor \
-		boost-program_options \
-		boost-python3 \
-		boost-random \
-		boost-regex \
-		boost-serialization \
-		boost-stacktrace_basic \
-		boost-stacktrace_noop \
-		boost-static \
-		boost-system \
-		boost-thread \
-		boost-timer \
-		boost-type_erasure \
-		boost-unit_test_framework \
-		boost-wave \
-		boost-wserialization \
-		ca-certificates \
-		libexecinfo \
-		libsodium \
-		libusb \
-		miniupnpc \
-		ncurses-libs \
-		openssl \
-		pcsc-lite-libs \
-		protobuf \
-		rapidjson \
-		readline \
-		unbound-libs \
-		zeromq
+ARG MONERO_VERSION
+ARG MONERO_HASH
+ARG MONERO_TARGET
 
-COPY --from=builder /usr/local/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
+RUN set -ex && apk --update --no-cache upgrade
+RUN set -ex && \
+	case "${MONERO_TARGET}" in \
+		*static*) apk add --no-cache \
+			ca-certificates \
+			iputils \
+			libexecinfo \
+			libsodium \
+			ncurses-libs \
+			pcsc-lite-libs \
+			readline \
+			zeromq \
+			;; \
+		*) apk add --no-cache \
+			boost \
+			boost-atomic \
+			boost-chrono \
+			boost-container \
+			boost-context \
+			boost-contract \
+			boost-coroutine \
+			boost-date_time \
+			boost-fiber \
+			boost-filesystem \
+			boost-graph \
+			boost-iostreams \
+			boost-libs \
+			boost-locale \
+			boost-log \
+			boost-log_setup \
+			boost-math \
+			boost-prg_exec_monitor \
+			boost-program_options \
+			boost-python3 \
+			boost-random \
+			boost-regex \
+			boost-serialization \
+			boost-stacktrace_basic \
+			boost-stacktrace_noop \
+			boost-static \
+			boost-system \
+			boost-thread \
+			boost-timer \
+			boost-type_erasure \
+			boost-unit_test_framework \
+			boost-wave \
+			boost-wserialization \
+			ca-certificates \
+			iputils \
+			libexecinfo \
+			libsodium \
+			libusb \
+			miniupnpc \
+			ncurses-libs \
+			numactl-tools \
+			openssl \
+			pcsc-lite-libs \
+			protobuf \
+			rapidjson \
+			readline \
+			unbound-libs \
+			zeromq \
+			;; \
+	esac
 
-ENV MONERO_HOME "/root/.bitmonero"
-
-# Contains the blockchain and wallet files
-VOLUME $MONERO_HOME
-WORKDIR $MONERO_HOME
+COPY --from=builder /usr/local/bin/fixuid /usr/local/bin/fixuid
+COPY --from=builder /usr/src/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
 ADD entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
+
+# Create a dedicated user and configure fixuid
+ARG MONERO_USER="monero"
+RUN set -ex && \
+	addgroup -g 1000 ${MONERO_USER} && \
+	adduser -u 1000 -G ${MONERO_USER} -h /home/${MONERO_USER} -s /bin/sh -D ${MONERO_USER} && \
+	mkdir -p /etc/fixuid && \
+	printf "user: ${MONERO_USER}\ngroup: ${MONERO_USER}\n" > /etc/fixuid/config.yml
+USER "${MONERO_USER}:${MONERO_USER}"
+
+# Contains the blockchain and wallet files
+ARG MONERO_HOME="/home/${MONERO_USER}/.bitmonero"
+VOLUME ${MONERO_HOME}
+WORKDIR ${MONERO_HOME}
 
 CMD [ "monerod", \
 		"--p2p-bind-ip=0.0.0.0", \
@@ -169,3 +197,17 @@ CMD [ "monerod", \
 		"--confirm-external-bind" ]
 
 EXPOSE 18080 18081
+
+# Labels, for details see http://label-schema.org/rc1/
+ARG BUILD_DATE
+LABEL maintainer="github.com/cornfeedhobo/docker-monero"
+LABEL org.label-schema.schema-version="1.0"
+LABEL org.label-schema.build-date="${BUILD_DATE}"
+LABEL org.label-schema.name="cornfeedhobo/monero"
+LABEL org.label-schema.description="Built from source monero Docker images based on Alpine Linux"
+LABEL org.label-schema.url="https://getmonero.org/"
+LABEL org.label-schema.vcs-url="https://github.com/monero-project/monero/"
+LABEL org.label-schema.vcs-ref="${MONERO_HASH}"
+LABEL org.label-schema.vendor="cornfeedhobo"
+LABEL org.label-schema.version="${MONERO_VERSION}"
+LABEL org.label-schema.docker.cmd="docker run -dit -p 18080:18080 -p 18081:18081 cornfeedhobo/monero"
