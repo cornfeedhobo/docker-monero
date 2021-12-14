@@ -58,6 +58,7 @@ RUN set -ex && apk add --no-cache \
 		file \
 		g++ \
 		git \
+		go \
 		graphviz \
 		libexecinfo-dev \
 		libsodium-dev \
@@ -76,12 +77,6 @@ RUN set -ex && apk add --no-cache \
 		unbound-dev \
 		zeromq-dev
 
-# Install fixuid tool
-RUN set -ex && \
-	curl -SsL https://github.com/boxboat/fixuid/releases/download/v0.5.1/fixuid-0.5.1-linux-amd64.tar.gz | tar -C /usr/local/bin -xzf - && \
-	chown root:root /usr/local/bin/fixuid && \
-	chmod 4755 /usr/local/bin/fixuid
-
 WORKDIR /usr/src
 
 ENV CFLAGS="-fPIC"
@@ -94,6 +89,11 @@ RUN set -ex \
 	&& git submodule init \
 	&& git submodule update \
 	&& nice -n 19 ionice -c2 -n7 make -j${NPROC:-$(nproc)} ${MONERO_TARGET}
+
+# Install fixuid tool
+RUN set -ex && \
+	go install github.com/boxboat/fixuid@v0.5.1 && \
+	chmod 4755 /root/go/bin/fixuid
 
 
 # Runtime stage
@@ -168,7 +168,7 @@ RUN set -ex && \
 			;; \
 	esac
 
-COPY --from=builder /usr/local/bin/fixuid /usr/local/bin/fixuid
+COPY --from=builder /root/go/bin/fixuid /usr/local/bin/fixuid
 COPY --from=builder /usr/src/monero/build/Linux/_no_branch_/release/bin/* /usr/local/bin/
 
 ADD entrypoint.sh /entrypoint.sh
@@ -178,7 +178,7 @@ ENTRYPOINT [ "/entrypoint.sh" ]
 ARG MONERO_USER="monero"
 RUN set -ex && \
 	addgroup -g 1000 ${MONERO_USER} && \
-	adduser -u 1000 -G ${MONERO_USER} -h /home/${MONERO_USER} -s /bin/sh -D ${MONERO_USER} && \
+	adduser -u 1000 -G ${MONERO_USER} -h /home/${MONERO_USER} -s /bin/ash -D ${MONERO_USER} && \
 	mkdir -p /etc/fixuid && \
 	printf "user: ${MONERO_USER}\ngroup: ${MONERO_USER}\n" > /etc/fixuid/config.yml
 USER "${MONERO_USER}:${MONERO_USER}"

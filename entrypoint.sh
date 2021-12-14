@@ -16,7 +16,7 @@ if [ "$1" = 'monerod' ]; then
 	fi
 	# start the daemon using fixuid
 	# to adjust permissions if needed
-	fixuid "$@"
+	exec fixuid -q "$@"
 fi
 
 # otherwise, don't get in their way
