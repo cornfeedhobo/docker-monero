@@ -1,0 +1,104 @@
+name: docker
+
+on:
+  push:
+    branches:
+      - 'latest'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - 'latest'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: Collect build context
+        id: echo
+        run: |
+          echo "::set-output name=date::$(date +'%Y-%m-%d')"
+          if ${{ github.ref_name == 'master' }}; then
+            echo "::set-output name=url::latest"
+          else
+            echo "::set-output name=url::tags/${{ github.ref_name }}"
+          fi
+
+      - name: Get monero release metadata
+        id: get_release_meta
+        uses: octokit/request-action@v2.x
+        with:
+          owner: monero-project
+          repo: monero
+          route: GET /repos/{owner}/{repo}/releases/${{ steps.echo.outputs.url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get monero tag ref
+        id: get_release_ref
+        uses: octokit/request-action@v2.x
+        with:
+          owner: monero-project
+          repo: monero
+          route: GET /repos/{owner}/{repo}/git/refs/tags/${{ steps.get_release_meta.outputs.data.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout ${{ github.repository }}
+        uses: actions/checkout@v3
+
+      - name: Docker metadata mapping
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            docker.io/${{ github.repository_owner }}/monero
+            ghcr.io/${{ github.repository_owner }}/monero
+          tags: |
+            # set the tag as the branch name
+            type=ref,event=branch,enable={{!is_default_branch}}
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args:
+            - "BUILD_DATE=${{ steps.date.outputs.date }}"
+            - "MONERO_VERSION=${{ steps.get_release_meta.outputs.data.tag_name }}"
+            - "MONERO_HASH=${{ steps.get_release_ref.outputs.data.object.sha }}"
+            - "MONERO_TARGET=release"
+
+      - name: Build and push static
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args:
+            - "BUILD_DATE=${{ steps.date.outputs.date }}"
+            - "MONERO_VERSION=${{ steps.get_release_meta.outputs.data.tag_name }}"
+            - "MONERO_HASH=${{ steps.get_release_ref.outputs.data.object.sha }}"
+            - "MONERO_TARGET=release-static"
