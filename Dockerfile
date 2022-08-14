@@ -7,6 +7,11 @@ ARG MONERO_VERSION
 ARG MONERO_HASH
 ARG MONERO_TARGET
 
+RUN set -ex && \
+	test -n "${MONERO_HASH}" && \
+	test -n "${MONERO_TARGET}" && \
+	test -n "${MONERO_VERSION}"
+
 # These steps are broken up so that the builder picks up the layer from the --update command
 RUN set -ex && apk --update --no-cache upgrade
 RUN set -ex && apk add --no-cache \

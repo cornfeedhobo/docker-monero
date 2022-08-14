@@ -7,17 +7,17 @@ if [ -n "${DEBUG:-}" ]; then
 fi
 
 repo='monero-project/monero'
-tag="$(git rev-parse --abbrev-ref HEAD)"
+tag="$(< VERSION)"
 sha="$(curl -LSs "https://api.github.com/repos/${repo}/git/ref/tags/${tag}" | jq -r '.object.sha')"
 
 build_flags="${1:-}"
 build_date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 build_script="$(sed -e "s/[[:space:]]\+/ /g" <<-ENDSCRIPT
 	docker build ${build_flags} \
-		--build-arg "BUILD_DATE=${build_date}" \
-		--build-arg "MONERO_VERSION=${tag}" \
-		--build-arg "MONERO_HASH=${sha}" \
-		--build-arg "MONERO_TARGET=release" \
+		--build-arg BUILD_DATE=${build_date} \
+		--build-arg MONERO_VERSION=${tag} \
+		--build-arg MONERO_HASH=${sha} \
+		--build-arg MONERO_TARGET=release \
 		-t cornfeedhobo/monero:${tag} .
 ENDSCRIPT
 )"
