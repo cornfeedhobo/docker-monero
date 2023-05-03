@@ -9,7 +9,7 @@ services:
       resources:
         limits:
           cpus: "2"
-          memory: "2G"
+          memory: "4G"
     ports:
       - "18080:18080"
       - "18081:18081"
@@ -23,6 +23,11 @@ services:
     image: "cornfeedhobo/monero:${TAG:-latest}"
     links: ["blockchain"]
     user: "${UID:-1000}:${GID:-1000}"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: "4G"
     tty: true
     volumes:
       - type: "bind"
