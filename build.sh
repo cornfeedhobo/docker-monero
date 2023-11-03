@@ -2,23 +2,25 @@
 
 set -eu
 
-if [ -n "${DEBUG:-}" ]; then
+if [[ -n "${DEBUG:+1}" ]]; then
 	set -x
 fi
 
-repo='monero-project/monero'
-tag="$(< VERSION)"
-sha="$(curl -LSs "https://api.github.com/repos/${repo}/git/ref/tags/${tag}" | jq -r '.object.sha')"
+version="$(< VERSION)"
 
-build_flags="${1:-}"
+version_sha="$(curl -LSs "https://api.github.com/repos/monero-project/monero/git/ref/tags/${version}" | jq -r '.object.sha')"
+
 build_date="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+build_tag="${BUILD_TAG:-cornfeedhobo/monero:$version}"
+
 build_script="$(sed -e "s/[[:space:]]\+/ /g" <<-ENDSCRIPT
-	docker build ${build_flags} \
+	docker build ${@} \
 		--build-arg BUILD_DATE=${build_date} \
-		--build-arg MONERO_VERSION=${tag} \
-		--build-arg MONERO_HASH=${sha} \
+		--build-arg MONERO_VERSION=${version} \
+		--build-arg MONERO_HASH=${version_sha} \
 		--build-arg MONERO_TARGET=release \
-		-t cornfeedhobo/monero:${tag} .
+		-t ${build_tag} .
 ENDSCRIPT
 )"
 
