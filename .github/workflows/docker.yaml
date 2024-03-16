@@ -12,59 +12,47 @@ jobs:
     steps:
 
       - name: Checkout ${{ github.repository }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Collect build context
         id: context
         run: |
-          echo "::set-output name=date::$(date +'%Y-%m-%d')"
-          echo "::set-output name=version::$(cat VERSION)"
+          echo "version=$(< VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Docker metadata mapping
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            docker.io/${{ github.repository_owner }}/monero
+            ghcr.io/${{ github.repository_owner }}/monero
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=ref,event=branch,enable=${{ github.ref != 'refs/heads/master' }}
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      - name: Get monero tag ref
-        id: get_release_ref
-        uses: octokit/request-action@v2.x
-        with:
-          route: GET /repos/monero-project/monero/git/refs/tags/${{ steps.context.outputs.version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker metadata mapping
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            docker.io/${{ github.repository_owner }}/monero
-            ghcr.io/${{ github.repository_owner }}/monero
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            BUILD_DATE=${{ steps.context.outputs.date }}
-            MONERO_VERSION=${{ steps.context.outputs.version }}
-            MONERO_HASH=${{ fromJson(steps.get_release_ref.outputs.data).object.sha }}
-            MONERO_TARGET=release
+            MONERO_TAG=${{ steps.context.outputs.version }}
