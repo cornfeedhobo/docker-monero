@@ -1,39 +1,51 @@
 # Multistage docker build, requires docker 17.05
 
+ARG ALPINE_TAG=3.20
+
 # Builder stage
-FROM alpine:edge as builder
+FROM alpine:${ALPINE_TAG} as builder
 
 ARG MONERO_TAG
 RUN test -n "${MONERO_TAG}"
 
 RUN set -ex && \
 	apk update && \
-	apk upgrade --no-cache && \
-	apk add --no-cache \
+	apk upgrade && \
+	apk add \
 		autoconf \
 		automake \
+		boost-dev \
+		clang-dev \
 		cmake \
+		cppzmq \
 		curl \
 		doxygen \
 		file \
-		g++ \
 		gettext \
 		git \
 		go \
 		gperf \
+		graphviz-dev \
+		hidapi-dev \
+		icu-data-full \
 		libtool \
+		libsodium-dev \
+		libudev-zero-dev \
+		libusb-dev \
 		linux-headers \
+		llvm-libunwind-dev \
 		make \
+		openssl-dev \
 		patch \
 		perl \
 		python3 \
+		qt5-qttools-dev \
+		rapidjson-dev \
+		readline-dev \
+		samurai \
+		unbound-dev \
+		zeromq-dev \
 		zlib-dev
-
-# Alpine doesn't package this anymore, and it's been archived on github.
-# This is dirty and won't last forever. It might be worth embedding soon.
-RUN apk add --no-cache \
-		--repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main \
-		libexecinfo-dev
 
 # Build the fixuid tool
 RUN set -ex && \
@@ -48,38 +60,59 @@ RUN git clone \
 
 WORKDIR /usr/src/monero
 
-# This is patched on master, but didn't make it into this release.
-COPY epee.stdint.patch epee.stdint.patch
-RUN patch -p1 < epee.stdint.patch
+# patches needed to work with alpine
+COPY patches patches
+RUN set -ex && \
+	patch -p1 < patches/easylogging.patch && \
+	patch -p1 < patches/epee.patch && \
+	patch -p1 < patches/miniupnpc.patch && \
+	patch -p1 < patches/monero.patch
 
-# Set flags that make it possible to compile against musl.
-ENV CFLAGS="-fPIC -DELPP_FEATURE_CRASH_LOG -DSTACK_TRACE=OFF"
-ENV CXXFLAGS="-fPIC -DELPP_FEATURE_CRASH_LOG -DSTACK_TRACE=OFF"
-ENV LDFLAGS="-Wl,-V"
-
-# Build dependencies and monero, but like, be nice about it.
-RUN nice -n 19 \
+# Build monero, but like, be nice about it.
+RUN set -ex && \
+	cmake \
+		-Wno-dev \
+		-B build \
+		-G Ninja \
+		-D ARCH="x86-64" \
+		-D BUILD_64=on \
+		-D BUILD_TAG="linux-x64" \
+		-D BUILD_TESTS=off \
+		-D MANUAL_SUBMODULES=1 \
+		-D STACK_TRACE=off \
+		-D CMAKE_BUILD_TYPE=Release \
+		-D CMAKE_C_COMPILER=clang \
+		-D CMAKE_CXX_COMPILER=clang++ \
+		-D CMAKE_INSTALL_PREFIX=/usr \
+		&& \
+	nice -n 19 \
 		ionice -c2 -n7 \
-			make -j${NPROC:-$(( $(nproc) - 1 ))} depends target=x86_64-linux-gnu
+			cmake --build build
 
 
 # Runtime stage
-FROM alpine:edge as runtime
+FROM alpine:${ALPINE_TAG} as runtime
 
 RUN set -ex && \
 	apk update && \
 	apk upgrade --no-cache && \
 	apk add --no-cache \
-		ca-certificates
-
-# Alpine doesn't package this anymore, and it's been archived on github.
-# This is dirty and won't last forever. It might be worth embedding soon.
-RUN apk add --no-cache \
-		--repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main \
-		libexecinfo
+		boost \
+		ca-certificates \
+		hidapi \
+		libsodium-dev \
+		libudev-zero \
+		libusb \
+		llvm-libunwind \
+		openssl \
+		rapidjson \
+		readline \
+		unbound \
+		zeromq \
+		zlib
 
 COPY --from=builder /root/go/bin/fixuid /usr/local/bin/fixuid
-COPY --from=builder /usr/src/monero/build/x86_64-linux-gnu/release/bin/* /usr/local/bin/
+COPY --from=builder /usr/src/monero/build/bin/* /usr/local/bin/
 
 # Create a dedicated user and configure fixuid
 ARG MONERO_USER="monero"

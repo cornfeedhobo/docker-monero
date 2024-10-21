@@ -1,0 +1,13 @@
+diff --git a/external/easylogging++/easylogging++.h b/external/easylogging++/easylogging++.h
+index b983a79..6d51f00 100644
+--- a/external/easylogging++/easylogging++.h
++++ b/external/easylogging++/easylogging++.h
+@@ -221,7 +221,7 @@ ELPP_INTERNAL_DEBUGGING_OUT_INFO << ELPP_INTERNAL_DEBUGGING_MSG(internalInfoStre
+ #  define ELPP_INTERNAL_INFO(lvl, msg)
+ #endif  // (defined(ELPP_DEBUG_INFO))
+ #if (defined(ELPP_FEATURE_ALL)) || (defined(ELPP_FEATURE_CRASH_LOG))
+-#  if (ELPP_COMPILER_GCC && !ELPP_MINGW && !ELPP_OS_OPENBSD && !ELPP_OS_NETBSD && !ELPP_OS_ANDROID && !ELPP_OS_EMSCRIPTEN)
++#  if (__has_include(<execinfo.h>) && ELPP_COMPILER_GCC && !ELPP_MINGW && !ELPP_OS_OPENBSD && !ELPP_OS_NETBSD && !ELPP_OS_ANDROID && !ELPP_OS_EMSCRIPTEN)
+ #    define ELPP_STACKTRACE 1
+ #  else
+ #    define ELPP_STACKTRACE 0

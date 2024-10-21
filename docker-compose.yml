@@ -35,6 +35,5 @@ services:
         target: "/home/monero/.bitmonero"
     command: >
       monero-wallet-cli
-      --wallet-file="${WALLET:-wallet}"
       --daemon-address="blockchain:18081"
       --trusted-daemon

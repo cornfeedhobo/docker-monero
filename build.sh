@@ -13,6 +13,7 @@ docker_tag="${1:-${monero_tag}}"
 build_script=(
 	docker
 	build
+	--progress=plain
 	--build-arg="MONERO_TAG=${monero_tag}"
 	--tag="cornfeedhobo/monero:${docker_tag}"
 	.

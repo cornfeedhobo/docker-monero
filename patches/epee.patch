@@ -1,0 +1,24 @@
+diff --git a/contrib/epee/include/net/http_base.h b/contrib/epee/include/net/http_base.h
+index 4af4da7..ee49c6e 100644
+--- a/contrib/epee/include/net/http_base.h
++++ b/contrib/epee/include/net/http_base.h
+@@ -34,6 +34,7 @@
+ #include <string>
+ #include <utility>
+ #include <list>
++#include <stdint.h>
+
+ #undef MONERO_DEFAULT_LOG_CATEGORY
+ #define MONERO_DEFAULT_LOG_CATEGORY "net.http"
+diff --git a/contrib/epee/src/file_io_utils.cpp b/contrib/epee/src/file_io_utils.cpp
+index c0798a5..2fd3aa1 100644
+--- a/contrib/epee/src/file_io_utils.cpp
++++ b/contrib/epee/src/file_io_utils.cpp
+@@ -26,6 +26,7 @@
+
+ #include "file_io_utils.h"
+
++#include <stdint.h>
+ #include <fstream>
+ #include <boost/filesystem/path.hpp>
+ #include <boost/filesystem/operations.hpp>

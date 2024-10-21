@@ -8,11 +8,11 @@
 ## TL;DR
 
 ```bash
-UID="$(id -u)" GID="$(id -g)" docker-compose run wallet
+UID="$(id -u)" GID="$(id -g)" docker compose run wallet
 ```
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ## Running the Daemon

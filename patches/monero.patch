@@ -1,0 +1,25 @@
+diff --git a/cmake/Version.cmake b/cmake/Version.cmake
+index e9ed9fb..e3377aa 100644
+--- a/cmake/Version.cmake
++++ b/cmake/Version.cmake
+@@ -32,7 +32,7 @@ function (write_version tag)
+ endfunction ()
+
+ find_package(Git QUIET)
+-if ("$Format:$" STREQUAL "")
++if ("$Format:$" STREQUAL "" OR NOT EXISTS .git)
+   # We're in a tarball; use hard-coded variables.
+   set(VERSION_IS_RELEASE "true")
+   write_version("release")
+diff --git a/src/common/combinator.cpp b/src/common/combinator.cpp
+index 72b1397..2b42a66 100644
+--- a/src/common/combinator.cpp
++++ b/src/common/combinator.cpp
+@@ -29,6 +29,7 @@
+ //
+ // Parts of this file are originally copyright (c) 2012-2013 The Cryptonote developers
+
++#include <stdint.h>
+ #include "combinator.h"
+
+ namespace tools {

@@ -1,0 +1,14 @@
+diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
+index 5b7f69a..8f4a346 100644
+--- a/external/CMakeLists.txt
++++ b/external/CMakeLists.txt
+@@ -36,6 +36,9 @@
+ # others.
+
+ find_package(Miniupnpc REQUIRED)
++if(NOT MSVC)
++  add_compile_options(-D_GNU_SOURCE)
++endif()
+
+ message(STATUS "Using in-tree miniupnpc")
+ set(UPNPC_NO_INSTALL TRUE CACHE BOOL "Disable miniupnp installation" FORCE)
