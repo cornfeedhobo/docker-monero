@@ -1,6 +1,6 @@
 # Multistage docker build, requires docker 17.05
 
-ARG ALPINE_TAG=3.20
+ARG ALPINE_TAG=3.22
 
 # Builder stage
 FROM alpine:${ALPINE_TAG} as builder
