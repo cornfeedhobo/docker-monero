@@ -3,7 +3,7 @@
 ARG ALPINE_TAG=3.22
 
 # Builder stage
-FROM alpine:${ALPINE_TAG} as builder
+FROM alpine:${ALPINE_TAG} AS builder
 
 ARG MONERO_TAG
 RUN test -n "${MONERO_TAG}"
@@ -91,7 +91,7 @@ RUN set -ex && \
 
 
 # Runtime stage
-FROM alpine:${ALPINE_TAG} as runtime
+FROM alpine:${ALPINE_TAG} AS runtime
 
 RUN set -ex && \
 	apk update && \
