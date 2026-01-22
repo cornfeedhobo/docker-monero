@@ -15,7 +15,7 @@ if [ "$1" = 'monerod' ]; then
 		set -- $numa "$@"
 	fi
 
-	exec "$@" --rpc-bind-ip=0.0.0.0
+	exec "$@"
 fi
 
 # otherwise, don't get in their way

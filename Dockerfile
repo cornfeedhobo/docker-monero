@@ -1,33 +1,89 @@
-FROM ubuntu:15.10
+FROM ubuntu:16.10 AS builder
 
-ADD entrypoint.sh /
+RUN set -ex && \
+	sed -i 's|archive.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list && \
+	sed -i 's|security.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list && \
+	apt-get update && \
+	apt-get install -y \
+		build-essential \
+		ca-certificates \
+		cmake \
+		curl \
+		doxygen \
+		git \
+		graphviz \
+		iputils-ping \
+		libbison-dev \
+		libboost-all-dev \
+		libdb++-dev \
+		libevent-dev \
+		libexpat1-dev \
+		libgtest-dev \
+		libldns-dev \
+		libminiupnpc-dev \
+		libssl-dev \
+		libunbound-dev \
+		libunwind-dev \
+		numactl \
+		pkgconf \
+		&& \
+	rm -rf /var/lib/apt/lists/*
 
-RUN set -ex \
-	&& apt-get update \
-	&& apt-get install -y ca-certificates curl iputils-ping numactl \
-	&& apt-get install -y git build-essential pkgconf cmake libunbound-dev libssl-dev libevent-dev \
-		libgtest-dev libdb++-dev libldns-dev libexpat1-dev libbison-dev \
-	&& apt-get install -y libboost1.58-dev libboost1.58-doc libboost-date-time1.58-dev \
-		libboost-chrono1.58-dev libboost-filesystem1.58-dev libboost-program-options1.58-dev \
-		libboost-serialization1.58-dev libboost-system1.58-dev libboost-regex1.58-dev libboost-thread1.58-dev \
-	&& rm -rf /var/lib/apt/lists/*
+RUN set -ex && \
+	git clone \
+		--progress \
+		--depth=1 \
+		--branch=v0.10.0 \
+		-- \
+		https://github.com/monero-project/monero.git \
+		/usr/local/src/monero \
+		2>&1 && \
+	git clone \
+		--progress \
+		--depth=1 \
+		-- \
+		https://github.com/moneroexamples/mymonero-simplewallet.git \
+		/usr/local/src/mymonero-simplewallet \
+		2>&1
 
-RUN set -ex \
-	&& git clone https://github.com/monero-project/bitmonero.git /opt/bitmonero \
-	&& cd /opt/bitmonero \
-	&& git checkout v0.10.0 \
-	&& nice -n 19 ionice -c2 -n7 make release-static \
-	&& mv /opt/bitmonero/build/release/bin/* /usr/bin/ \
-	&& cd / \
-	&& rm -rf /opt/bitmonero
+WORKDIR /usr/local/src/monero
+RUN nice -n 19 \
+		ionice -c2 -n7 \
+			make all
+
+WORKDIR /usr/local/src/mymonero-simplewallet
+COPY build-mymonero-simplewallet.sh /usr/local/src/mymonero-simplewallet/build-mymonero-simplewallet.sh
+RUN bash /usr/local/src/mymonero-simplewallet/build-mymonero-simplewallet.sh
+
+FROM ubuntu:16.10 AS runtime
+
+COPY --from=builder /usr/local/src/monero/build/release/bin/* /usr/local/bin/
+COPY --from=builder /usr/local/src/mymonero-simplewallet/mymonerowallet /usr/local/bin/mymonerowallet
+
+RUN set -ex && \
+	sed -i 's|archive.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list && \
+	sed -i 's|security.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list && \
+	apt-get update && \
+	apt install -y \
+		$(apt search libboost 2>/dev/null | grep '1\.61' | grep -vE '\-(dev|doc|dbg)' | cut -d'/' -f1 | tr '\n' ' ') \
+		libdb5.3++ \
+		libevent-2.0-5 \
+		libexpat1 \
+		libldns1 \
+		libminiupnpc10 \
+		libssl1.0.0 \
+		libunbound2 \
+		libunwind8 \
+		numactl \
+		&& \
+	rm -rf /var/lib/apt/lists/*
 
 VOLUME /root/.bitmonero
-
 WORKDIR /root/.bitmonero
 
 EXPOSE 18080 18081
 
-ENTRYPOINT ["/entrypoint.sh"]
-
-CMD ["monerod"]
-
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod 755 /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["monerod", "--help"]
