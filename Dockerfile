@@ -14,27 +14,35 @@ RUN set -ex && \
 	apk add \
 		autoconf \
 		automake \
+		bison \
 		boost-dev \
-		clang-dev \
+		build-base \
+		ccache \
 		cmake \
 		cppzmq \
 		curl \
 		doxygen \
+		expat-dev \
 		file \
-		gettext \
+		gettext-dev \
 		git \
 		go \
 		gperf \
+		graphviz \
 		graphviz-dev \
+		gtest-dev \
 		hidapi-dev \
 		icu-data-full \
-		libtool \
+		iputils \
+		ldns-dev \
+		libevent-dev \
 		libsodium-dev \
+		libtool \
 		libudev-zero-dev \
 		libusb-dev \
 		linux-headers \
-		llvm-libunwind-dev \
 		make \
+		miniupnpc-dev \
 		openssl-dev \
 		patch \
 		perl \
@@ -54,13 +62,16 @@ RUN set -ex && \
 
 # Clone Monero and submodules
 RUN git clone \
-		--recursive --depth 1 -b ${MONERO_TAG} \
-		https://github.com/monero-project/monero.git \
-		/usr/src/monero
+	--progress --depth 1 \
+	--recursive -b ${MONERO_TAG} \
+	-- \
+	https://github.com/monero-project/monero.git \
+	/usr/local/src/monero \
+	2>&1
 
-WORKDIR /usr/src/monero
+WORKDIR /usr/local/src/monero
 
-# patches needed to work with alpine
+# Apply patches needed to work with alpine
 COPY patches patches
 RUN set -ex && \
 	patch -p1 < patches/easylogging.patch && \
@@ -71,23 +82,29 @@ RUN set -ex && \
 # Build monero, but like, be nice about it.
 RUN set -ex && \
 	cmake \
-		-Wno-dev \
 		-B build \
-		-G Ninja \
 		-D ARCH="x86-64" \
+		-D Boost_USE_STATIC_LIBS=off \
+		-D BOOST_INCLUDEDIR=/usr/include \
+		-D BOOST_LIBRARYDIR=/usr/lib \
+		-D BOOST_ROOT=/usr \
 		-D BUILD_64=on \
+		-D BUILD_SHARED_LIBS=on \
 		-D BUILD_TAG="linux-x64" \
 		-D BUILD_TESTS=off \
+		-D CMAKE_BUILD_TYPE=Release \
+		-D CMAKE_C_COMPILER=gcc \
+		-D CMAKE_CXX_COMPILER=g++ \
+		-D CMAKE_PREFIX_PATH=/usr \
 		-D MANUAL_SUBMODULES=1 \
 		-D STACK_TRACE=off \
-		-D CMAKE_BUILD_TYPE=Release \
-		-D CMAKE_C_COMPILER=clang \
-		-D CMAKE_CXX_COMPILER=clang++ \
-		-D CMAKE_INSTALL_PREFIX=/usr \
+		-D STATIC=off \
+		-G Ninja \
+		-S . \
+		-Wno-dev \
 		&& \
-	nice -n 19 \
-		ionice -c2 -n7 \
-			cmake --build build
+	nice -n 19 ionice -c2 -n7 \
+		cmake --build build
 
 
 # Runtime stage
@@ -99,11 +116,16 @@ RUN set -ex && \
 	apk add --no-cache \
 		boost \
 		ca-certificates \
+		expat \
+		gettext \
 		hidapi \
-		libsodium-dev \
+		ldns \
+		libevent \
+		libsodium \
 		libudev-zero \
+		libunwind \
 		libusb \
-		llvm-libunwind \
+		miniupnpc \
 		openssl \
 		rapidjson \
 		readline \
@@ -112,7 +134,20 @@ RUN set -ex && \
 		zlib
 
 COPY --from=builder /root/go/bin/fixuid /usr/local/bin/fixuid
-COPY --from=builder /usr/src/monero/build/bin/* /usr/local/bin/
+
+COPY --from=builder /usr/local/src/monero/build/bin/* /usr/local/bin/
+
+COPY --from=builder /usr/local/src/monero/build/src/*.so /usr/local/lib/
+
+COPY --from=builder /usr/local/src/monero/build/src/*/*.so /usr/local/lib/
+
+COPY --from=builder /usr/local/src/monero/build/src/*/*/*.so /usr/local/lib/
+
+COPY --from=builder /usr/local/src/monero/build/contrib/*/*/*.so /usr/local/lib/
+
+COPY --from=builder /usr/local/src/monero/build/external/*/*.so /usr/local/lib/
+
+COPY --from=builder /usr/local/src/monero/build/external/*/*/*.so /usr/local/lib/
 
 # Create a dedicated user and configure fixuid
 ARG MONERO_USER="monero"
@@ -135,7 +170,10 @@ CMD [ "monerod", \
 		"--p2p-bind-port=18080", \
 		"--rpc-bind-ip=0.0.0.0", \
 		"--rpc-bind-port=18081", \
+		"--zmq-rpc-bind-ip=0.0.0.0", \
+		"--zmq-rpc-bind-port=18082", \
+		"--zmq-pub=tcp://0.0.0.0:18083", \
 		"--non-interactive", \
 		"--confirm-external-bind" ]
 
-EXPOSE 18080 18081
+EXPOSE 18080 18081 18082 18083

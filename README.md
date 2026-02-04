@@ -8,20 +8,21 @@
 ## TL;DR
 
 ```bash
-UID="$(id -u)" GID="$(id -g)" docker compose run wallet
+docker compose run --user="$(id -u):$(id -g)" wallet
 ```
 
 ```bash
-docker compose down
+docker compose down -v
 ```
 
 ## Running the Daemon
 
 ```bash
 docker run -dit --name monero \
-  -v $HOME/.bitmonero:/root/.bitmonero \
-  -p 18080:18080 -p 18081:18081 \
   --user="$(id -u):$(id -g)" \
+  --volume="$HOME/.bitmonero:/home/monero/.bitmonero" \
+  --publish='18080:18080' \
+  --publish='18081:18081' \
   cornfeedhobo/monero
 ```
 
@@ -34,8 +35,8 @@ docker logs monero
 ```bash
 curl -X POST http://localhost:18081/json_rpc \
   -d '{"jsonrpc":"2.0","id":"test","method":"get_info"}' \
-  -H "Content-Type: application/json" \
-  -H "Accept:application/json"
+  -H 'Content-Type: application/json' \
+  -H 'Accept:application/json'
 ```
 
 ## Using the wallet
@@ -43,18 +44,17 @@ curl -X POST http://localhost:18081/json_rpc \
 ### Docker exec
 
 ```bash
-docker exec -it monero monero-wallet-cli --wallet-file=wallet
+docker exec -it monero monero-wallet-cli
 ```
 
 ### Isolated container
 
 ```bash
 docker run --rm -it --link monero \
-  -v $HOME/.bitmonero:/root/.bitmonero \
   --user="$(id -u):$(id -g)" \
+  --volume="$HOME/.bitmonero:/home/monero/.bitmonero" \
   cornfeedhobo/monero \
     monero-wallet-cli \
-      --wallet-file=wallet \
       --daemon-address="$MONERO_PORT_18081_TCP_ADDR:$MONERO_PORT_18081_TCP_PORT"
 ```
 
