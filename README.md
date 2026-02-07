@@ -5,17 +5,39 @@
 
 **Built from source [monero](http://getmonero.org) Docker images based on [Alpine Linux](https://alpinelinux.org)**
 
-## TL;DR
+**[fixuid](https://github.com/boxboat/fixuid) included**
+
+## Docker Compose
+
+Docker Compose is included as a convenience to get you running immediately.
+
+Note: _Docker Compose can be installed as a plugin or a standalone command_.
+      _Adjust your commands according to your install_.
+
+### Supported environment variables
+
+| Name     | Default Value    |
+| -------- | ---------------- |
+| UID      | 1000             |
+| GID      | 1000             |
+| TAG      | latest           |
+| DATA_DIR | $HOME/.bitmonero |
+
+### Launch wallet while daemon syncs in the background
 
 ```bash
-docker compose run --user="$(id -u):$(id -g)" wallet
+UID="$(id -u)" GID="$(id -g)" docker compose run wallet
 ```
+
+### Destroy everything
 
 ```bash
 docker compose down -v
 ```
 
-## Running the Daemon
+## Docker
+
+### Running the Daemon
 
 ```bash
 docker run -dit --name monero \
@@ -26,7 +48,7 @@ docker run -dit --name monero \
   cornfeedhobo/monero
 ```
 
-## Checking the container status
+### Checking the daemon status
 
 ```bash
 docker logs monero
@@ -39,15 +61,19 @@ curl -X POST http://localhost:18081/json_rpc \
   -H 'Accept:application/json'
 ```
 
-## Using the wallet
+### Using the wallet
 
-### Docker exec
+#### Docker exec
+
+To run in the same container as the running daemon:
 
 ```bash
 docker exec -it monero monero-wallet-cli
 ```
 
-### Isolated container
+#### Isolated container
+
+To run in a different container than the running daemon:
 
 ```bash
 docker run --rm -it --link monero \

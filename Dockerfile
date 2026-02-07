@@ -166,14 +166,14 @@ WORKDIR ${MONERO_HOME}
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "monerod", \
+		"--confirm-external-bind", \
+		"--non-interactive", \
 		"--p2p-bind-ip=0.0.0.0", \
 		"--p2p-bind-port=18080", \
 		"--rpc-bind-ip=0.0.0.0", \
 		"--rpc-bind-port=18081", \
 		"--zmq-rpc-bind-ip=0.0.0.0", \
 		"--zmq-rpc-bind-port=18082", \
-		"--zmq-pub=tcp://0.0.0.0:18083", \
-		"--non-interactive", \
-		"--confirm-external-bind" ]
+		"--zmq-pub=tcp://0.0.0.0:18083" ]
 
 EXPOSE 18080 18081 18082 18083
