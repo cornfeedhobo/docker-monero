@@ -22,6 +22,7 @@
 1) Checkout a new branch and commit
 
     ```shell
+    git add VERSION
     git checkout -b "$(< VERSION)"
     git commit -m "bump to $(< VERSION)"
     ```
